@@ -6,46 +6,44 @@ Poista sitten *kaikki* suluilla merkityt kohdat.)
 
 ## Tietoja 
 
-Tekijä: (Etunimi Sukunimi)
+Tekijä: Eeli Eskola
 
-Työ git-varaston osoite: <https://gitlab.jyu.fi/anlakane/ohj1ht> (*Korvaa* tämä osoite oman git-varastosi osoitteella)
+Työ git-varaston osoite: <https://github.com/zfhp/ohj1ht> (*Korvaa* tämä osoite oman git-varastosi osoitteella)
 
-Pelin nimi: (Nimi)
+Pelin nimi: Forum Crawler
 
-Pelialusta: Windows/macOS/Linux (Valitse alusta)
+Pelialusta: Windows
 
-Pelaajien lukumäärä: 1/2/3/4 (Valitse pelaajien lukumäärä)
+Pelaajien lukumäärä: 1
 
 ## Pelin tarina
 
-(Pelin tarina.)
+Olet koditon mies Jyväskylän Forum - kauppakeskuksessa. Olet sekavassa mielentilassa ja et löydä uloskäyntiä. Tehtäväsi on kerätä rahaa pullopanteista ja tavaroita, päihittää vihollisia kuten asiakkaat ja turvamiehet ja lopulta löytää uloskäynti.
 
 ## Pelin idea ja tavoitteet
 
-(Pelin idea ja tavoitteet.)
+Pelin ideana on olla ylhäältä katsotusta perspektiivistä pelattava dungeon crawler roguelite, jossa on satunnaisesti luodut kartat. Karttojen olisi tarkoitus koostua huoneista, joissa on joko vihollisia tai esimerkiksi kauppa tai aarteita. Tavoitteenani on saada aikaiseksi toimiva kartan satunnainen luonti, muutama erilainen vihollinen ja paljon erilaisia tavaroita, joita voi hyödyntää pelissä. Teen luultavasti ohjelman, jolla luon valmiiksi huoneita json-tiedostoina, joista ohjelma valitsee satunnaisesti.
 
 ## Hahmotelma pelistä
 
-(Kun olet lisännyt suunnitelmakuvan tähän hakemistoon, linkitä se tähän alle. Alla on esimerkkikuvan linkitys.)
-
-![Esimerkkikuva](esimerkkikuva.png "Esimerkkikuva")
+![Suunnitelmakuva](suunnitelmakuva.png "Suunnitelmakuva")
 
 ## Toteutuksen suunnitelma
 
 Helmikuu
 
-- (Tavoite 1)
-- (Tavoite 2)
-- (Tavoite 3)
+- Pelaaja ja pelaajan liikkuminen
+- Viholliset
+- Kerättäviä tavaroita
 
 Maaliskuu
 
-- (Tavoite 1)
-- (Tavoite 2)
-- (Tavoite 3)
+- Kartan satunnainen luonti ja huoneiden luomis ohjelma
+- Menut ja UI
+- Toimiva peli
 
 Jos aikaa jää
 
-- (Tavoite 1)
-- (Tavoite 2)
-- (Tavoite 3)
+- Minimap
+- Tarina pelissä
+- Bossfight
