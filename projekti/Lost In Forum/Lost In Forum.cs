@@ -35,17 +35,17 @@ using System.Xml.Serialization;
 
 public class Player : PhysicsObject
 {
-    public Player() : base(200,200, Shape.Rectangle)
+    public Player() : base(50,50, Shape.Octagon)
     {
         this.MaxVelocity = 0;
     }
+    public GameObject Sprite { get; set; }
     bool immune;
     public double punchInterval { get; set; } = 0.5;
     public Vector punchdir { get; set; }
     public bool Punching { get; set; }
     public int Dmg { get; set; } = 1;
     public IntMeter Hp { get; set; } = new IntMeter(3, 0, 3);
-    public PhysicsObject Hitbox { get; set; }
     public double Speed { get; set; } = 7;
     public Animation Walk_S { get; set; }
     public Animation Walk_N { get; set; }
@@ -62,9 +62,10 @@ public class Player : PhysicsObject
             return;
         Hp.AddValue(-dmg);
         immune = true;
-        Timer flashTimer = new Timer(0.1, delegate { this.IsVisible = !this.IsVisible; });
+        UI.HealthBar.UpdateHealthBar(this);
+        Timer flashTimer = new Timer(0.1, delegate { this.Sprite.IsVisible = !this.Sprite.IsVisible; });
         flashTimer.Start();
-        Timer.SingleShot(0.75, delegate { immune = false; flashTimer.Stop(); this.IsVisible = true; });
+        Timer.SingleShot(0.75, delegate { immune = false; flashTimer.Stop(); this.Sprite.IsVisible = true; });
     }
     public void Walk(Vector dir)
     {
@@ -74,24 +75,21 @@ public class Player : PhysicsObject
     public void Die()
     {
         this.Destroy();
-        this.Hitbox.Destroy();
         Speed = 0;
-    }
-    public override void Update(Time time)
-    {
-        Hitbox.Position = new Vector(this.X, this.Bottom + Hitbox.Height/2);
     }
 }
 class Projectile : PhysicsObject
 {
-    public Projectile(double size, double speed, Vector dir) : base(size, size, Shape.Circle)
+    public Projectile(double size, double speed, Vector dir, PhysicsObject o) : base(size, size, Shape.Circle)
     {
         this.speed = speed;
         this.dir = dir;
         this.CanRotate = false;
         this.Collided += coll;
         Timer.SingleShot(LifeTime, delegate { this.Destroy(); });
+        owner = o;
     }
+    PhysicsObject owner;
     public bool Friendly {  get; set; }
     public int Damage { get; set; } = 1;
     public double LifeTime = 3;
@@ -107,7 +105,7 @@ class Projectile : PhysicsObject
     }
     void coll(IPhysicsObject o, IPhysicsObject t)
     {
-        if(t.Parent is Player p && !this.Friendly)
+        if(t is Player p && !this.Friendly)
         {
             p.TakeDamage(Damage);
         }
@@ -115,7 +113,7 @@ class Projectile : PhysicsObject
         {
             e.TakeDamage(Damage);
         }
-        if(t.Tag.ToString() !="Player")
+        if(t != this.owner && t.Tag.ToString() != "Punch")
             this.Destroy();
     }
 }
@@ -163,7 +161,7 @@ class Enemy : PhysicsObject
     /// </summary>
     public void ContactDamage(IPhysicsObject collider, IPhysicsObject target)
     {
-         if (target.Tag.ToString() == "PlayerHitbox")
+         if (target.Tag.ToString() == "Player")
         {
             Target.TakeDamage(damage);
         }
@@ -178,9 +176,9 @@ class TestiVihu3 : Enemy
     }
     void Shoot()
     {
-        if (Target == null)
+        if (Target == null || !this.IsAddedToGame)
             return;
-        Projectile p = new Projectile(50, 5, (Target.Hitbox.Position - this.Position).Normalize());
+        Projectile p = new Projectile(50, 5, (Target.Position - this.Position).Normalize(), this);
         p.Friendly = false;
         p.CollisionIgnoreGroup = 67;
         p.Position = this.Position;
@@ -199,7 +197,7 @@ class TestiVihu1 : Enemy
     public override void AI()
     {
         if (Target != null && Target.Position != this.Position)
-            this.Position += (Target.Hitbox.Position - this.Position ).Normalize() * speed;
+            this.Position += (Target.Position - this.Position ).Normalize() * speed;
     }
 }
 class TestiVihu2 : Enemy
@@ -209,7 +207,7 @@ class TestiVihu2 : Enemy
     Vector dir;
     public TestiVihu2() : base (150, 150)
     {
-        pissa.Timeout += delegate { this.Color = Color.Red; Timer.SingleShot(0.3, delegate { liikkuu = true; this.Color = Color.White; }); Timer.SingleShot(0.9, delegate { liikkuu = false; }); dir = (Target.Hitbox.Position - this.Position).Normalize(); };
+        pissa.Timeout += delegate { this.Color = Color.Red; Timer.SingleShot(0.3, delegate { liikkuu = true; this.Color = Color.White; }); Timer.SingleShot(0.9, delegate { liikkuu = false; }); dir = (Target.Position - this.Position).Normalize(); };
         speed = 26;
         hp.MaxValue = 6;
         hp.DefaultValue = 6;
@@ -460,21 +458,12 @@ public class Lost_In_Forum : PhysicsGame
         player.IgnoresGravity = true;
         player.CollisionIgnoreGroup = 1;
         player.MaxVelocity = 0;
-        player.IgnoresCollisionResponse = true;
         player.CanRotate = false;
+        player.IsVisible = false;
         Add(player);
-        player.Hitbox = new PhysicsObject(50, 50, Shape.Octagon);
-        player.Hitbox.Tag = "PlayerHitbox";
-        player.Hitbox.IgnoresGravity = true;
-        player.Hitbox.IgnoresCollisionResponse = true;
-        player.Hitbox.Y = player.Bottom + player.Hitbox.Height / 2;
-        player.Hitbox.Color = Color.Transparent;
-        Add(player.Hitbox);
-        PhysicsObject playercollider = new PhysicsObject(50, 50, Shape.Octagon, player.X, player.Bottom + player.Hitbox.Height / 2);
-        playercollider.CollisionIgnoreGroup = 1;
-        playercollider.CanRotate = false;
-        playercollider.MaxVelocity = 0;
-        player.Add(playercollider);
+        player.Sprite = new GameObject(200, 200, Shape.Rectangle);
+        player.Sprite.Y = player.Bottom + player.Sprite.Height / 2;
+        player.Add(player.Sprite);
     }
     /// <summary>
     /// Luo pelin ohjaukset.
@@ -499,7 +488,7 @@ public class Lost_In_Forum : PhysicsGame
     {
         if (player.Punching) return;
         PhysicsObject p = new PhysicsObject(200, 200, Shape.Rectangle);
-        p.Position = player.Position;
+        p.Position = player.Sprite.Position;
         p.Collided += PunchCollision;
         player.punchdir = v;
         Image[] i;
@@ -610,62 +599,62 @@ public class Lost_In_Forum : PhysicsGame
         if (player.Punching)
         {
             if (player.punchdir.X > 0)
-                player.Animation = player.Punch_R;
+                player.Sprite.Animation = player.Punch_R;
             else if (player.punchdir.X < 0)
-                player.Animation = player.Punch_L;
+                player.Sprite.Animation = player.Punch_L;
             else if (player.punchdir.Y > 0)
-                player.Animation = player.Punch_U;
+                player.Sprite.Animation = player.Punch_U;
             else if (player.punchdir.Y < 0)
-                player.Animation = player.Punch_D;
+                player.Sprite.Animation = player.Punch_D;
             return;
         }
         if (Keyboard.IsKeyDown(Key.W))
         {
-            player.Animation = player.Walk_N;
-            player.Animation.IsPlaying = true;
+            player.Sprite.Animation = player.Walk_N;
+            player.Sprite.Animation.IsPlaying = true;
         }
         else if (Keyboard.IsKeyDown(Key.S))
         {
-            player.Animation = player.Walk_S;
-            player.Animation.IsPlaying = true;
+            player.Sprite.Animation = player.Walk_S;
+            player.Sprite.Animation.IsPlaying = true;
         }
         else if (Keyboard.IsKeyDown(Key.A))
         {
-            player.Animation = player.Walk_W;
-            player.Animation.IsPlaying = true;
+            player.Sprite.Animation = player.Walk_W;
+            player.Sprite.Animation.IsPlaying = true;
         }
         else if (Keyboard.IsKeyDown(Key.D))
         {
-            player.Animation = player.Walk_E;
-            player.Animation.IsPlaying = true;
+            player.Sprite.Animation = player.Walk_E;
+            player.Sprite.Animation.IsPlaying = true;
         }
         else
-            player.Animation = player.Idle;
+            player.Sprite.Animation = player.Idle;
     }
     /// <summary>
     /// Tarkistaa, ett‰ onko pelaaja poistumassa huoneesta ja siirt‰‰ pelaajan oikeaan huoneeseen.
     /// </summary>
     void CheckRoomExit()
     {
-        if (player.Hitbox.Position.X > Level.Right)
+        if (player.Position.X > Level.Right)
         {
             Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0] + 1]);
             player.X = Level.Left + 100;
             Rooms.CurrentPos[0]++;
         }
-        if (player.Hitbox.Position.X < Level.Left)
+        if (player.Position.X < Level.Left)
         {
             Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0] - 1]);
             player.X = Level.Right - 100;
             Rooms.CurrentPos[0]--;
         }
-        if (player.Hitbox.Position.Y > Level.Top)
+        if (player.Position.Y > Level.Top)
         {
             Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.CurrentPos[1] - 1, Rooms.CurrentPos[0]]);
             player.Y = Level.Bottom + 150;
             Rooms.CurrentPos[1]--;
         }
-        if (player.Hitbox.Position.Y < Level.Bottom)
+        if (player.Position.Y < Level.Bottom)
         {
             Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.CurrentPos[1] + 1, Rooms.CurrentPos[0]]);
             player.Y = Level.Top - 100;
@@ -702,7 +691,6 @@ public class Lost_In_Forum : PhysicsGame
     {
         AnimatePlayer();
         CheckRoomExit();
-        UI.HealthBar.UpdateHealthBar(player);
         base.Update(time);
     }
 }
