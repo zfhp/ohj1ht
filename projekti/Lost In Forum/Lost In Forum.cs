@@ -126,6 +126,8 @@ class Enemy : PhysicsObject
         this.CanRotate = false;
         this.LinearDamping = 6;
     }
+
+
     public Player Target { get; set; }
     public double speed { get; set; } = 5;
     public double KbPower { get; set; } = 10000;
@@ -133,10 +135,14 @@ class Enemy : PhysicsObject
     public  IntMeter hp { get; set; } = new IntMeter(3,0,3);
     public string type { get; set; }
     public int damage { get; set; } = 1;
+
+
     public virtual void AI()
     {
         
     }
+
+
     public override void Update(Time time)
     {
         AI();
@@ -349,7 +355,7 @@ class Rooms
             CurrentRoom = new Room();
             foreach (ObjectData obj in room.Layout)
             {
-                PhysicsObject block = new PhysicsObject(obj.Width, obj.Height, obj.X, obj.Y);
+                PhysicsObject block = new PhysicsObject(game.Level.Width/32, game.Level.Height/20, obj.X, obj.Y);
                 block.MakeStatic();
                 game.Add(block);
                 CurrentRoom.Layout.Add(block);
@@ -357,8 +363,7 @@ class Rooms
             CurrentRoom.Exits = room.Exits;
         }
         catch (Exception e)
-        {
-            // Print the error so you can see it!
+        { 
             System.Diagnostics.Debug.WriteLine("Error loading room: " + e.Message);
         }
     }
@@ -435,6 +440,7 @@ public class RoomData()
 public class Lost_In_Forum : PhysicsGame
 {
     Player player;
+    bool GamePlaying = false;
     /// <summary>
     /// Asettaa kentän koon ja kameran/ikkunan asetuksia
     /// </summary>
@@ -461,7 +467,7 @@ public class Lost_In_Forum : PhysicsGame
         player.CanRotate = false;
         player.IsVisible = false;
         Add(player);
-        player.Sprite = new GameObject(200, 200, Shape.Rectangle);
+        player.Sprite = new GameObject(Level.Width / 9.6, Level.Height / 6, Shape.Rectangle);
         player.Sprite.Y = player.Bottom + player.Sprite.Height / 2;
         player.Add(player.Sprite);
     }
@@ -661,13 +667,29 @@ public class Lost_In_Forum : PhysicsGame
             Rooms.CurrentPos[1]++;
         }
     }
-    public override void Begin()
+
+
+    void MainMenu()
     {
+        Level.BackgroundColor = Color.Gray;
+        GameObject Title = new GameObject(599, 392, Shape.Rectangle);
+        Title.Image = Game.LoadImage("FORUMTITLE");
+        Title.Y = Level.Top - Title.Height / 1.5;
+        GameObject playButton = new GameObject(200, 50, Shape.Rectangle);
+        playButton.Y = Title.Bottom - 2 * playButton.Height;
+        playButton.Image = Game.LoadImage("Play");
+        Mouse.ListenOn(playButton, MouseButton.Left, ButtonState.Pressed, StartGame, "");
+        Add(playButton);
+        Add(Title);
+    } 
+    void StartGame()
+    {
+        ClearAll();
         SetupWindow();
         Rooms.GetAllRooms();
         Rooms.CreateMap();
         Rooms.SetRooms();
-        Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.StartRoom,Rooms.StartRoom]);
+        Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.StartRoom, Rooms.StartRoom]);
         CreatePlayer();
         CreateAnimations();
         CreateControls();
@@ -686,11 +708,24 @@ public class Lost_In_Forum : PhysicsGame
         a.X = 500;
         a.Y = 100;
         Add(a);
+        Keyboard.Listen(Key.K, ButtonState.Pressed, delegate {
+            TestiVihu2 v = new TestiVihu2();
+            v.Target = player;
+            Add(v);
+        }, "");
+        GamePlaying = true;
+    }
+    public override void Begin()
+    {
+        MainMenu();
     }
     protected override void Update(Time time)
     {
-        AnimatePlayer();
-        CheckRoomExit();
+        if (GamePlaying)
+        {
+            AnimatePlayer();
+            CheckRoomExit();
+        }
         base.Update(time);
     }
 }
