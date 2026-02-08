@@ -131,6 +131,7 @@ class Enemy : PhysicsObject
         this.CanRotate = false;
         this.LinearDamping = 6;
         this.Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
+        this.Color = Color.Red;
     }
 
 
@@ -145,7 +146,11 @@ class Enemy : PhysicsObject
 
     public virtual void AI()
     {
-        
+        if(Target == null)
+        {
+            this.Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
+            return;
+        }
     }
 
 
@@ -192,7 +197,7 @@ class TestiVihu3 : Enemy
     {
         if (Target == null || !this.IsAddedToGame)
             return;
-        Projectile p = new Projectile(50, 5, (Target.Position - this.Position).Normalize(), this);
+        Projectile p = new Projectile(50, 15, (Target.Position - this.Position).Normalize(), this);
         p.Friendly = false;
         p.CollisionIgnoreGroup = 67;
         p.Position = this.Position;
@@ -210,6 +215,7 @@ class TestiVihu1 : Enemy
     }
     public override void AI()
     {
+        base.AI();
         if (Target != null && Target.Position != this.Position)
             this.Position += (Target.Position - this.Position ).Normalize() * speed;
     }
@@ -222,7 +228,7 @@ class TestiVihu2 : Enemy
     public TestiVihu2() : base (150, 150)
     {
         this.Danger = 3;
-        pissa.Timeout += delegate { this.Color = Color.Red; Timer.SingleShot(0.3, delegate { liikkuu = true; this.Color = Color.White; }); Timer.SingleShot(0.9, delegate { liikkuu = false; }); dir = (Target.Position - this.Position).Normalize(); };
+        pissa.Timeout += Dash;
         speed = 26;
         hp.MaxValue = 6;
         hp.DefaultValue = 6;
@@ -230,8 +236,25 @@ class TestiVihu2 : Enemy
         this.Collided += ContactDamage;
         this.KbPower = 40000;
     }
+    void Dash()
+    {
+        if (Target == null)
+            return;
+        this.Color = Color.Red;
+        Timer.SingleShot(0.3, delegate
+        {
+            liikkuu = true;
+            this.Color = Color.White;
+        });
+        Timer.SingleShot(0.9, delegate 
+        {
+            liikkuu = false;
+        });
+        dir = (Target.Position - this.Position).Normalize();
+    }
     public override void AI()
     {
+        base.AI();
         if(liikkuu && Target != null && Target.Position != this.Position)
         {
             this.Position += dir * speed;
@@ -440,6 +463,11 @@ public static class UI
         }
         public static void CreateHealthBar(Game game, Player player, Level level)
         {
+            for (int i = 0; i < Hearts.Count;)
+            {
+                Hearts[i].Destroy();
+                Hearts.RemoveAt(i);
+            }
             for (int i = 0; i < player.Hp.MaxValue; i++)
             {
                 Heart h = new Heart();
@@ -502,7 +530,7 @@ public class Lost_In_Forum : PhysicsGame
         Level.Size = new Jypeli.Vector(1920, 1200);
         IsFullScreen = true;
         Camera.ZoomToLevel();
-        Level.BackgroundColor = Color.Black;
+        Level.BackgroundColor = Color.DarkGray;
         Game.UpdatesPerSecod = 59;
     }
     /// <summary>
@@ -724,9 +752,13 @@ public class Lost_In_Forum : PhysicsGame
         }
     }
 
+    public static void Menu()
+    {
 
+    }
     void MainMenu()
     {
+        IsFullScreen = false;
         SetWindowSize(900,900);
         Level.Size = new Vector(900,900);
         Level.BackgroundColor = Color.DarkGray;
@@ -752,15 +784,14 @@ public class Lost_In_Forum : PhysicsGame
         bgImage.Image = Game.LoadImage("MenuBG");
         bgImage.Image.Scaling = ImageScaling.Nearest;
         Mouse.ListenOn(playButton, MouseButton.Left, ButtonState.Pressed, StartGame, "");
-        Add(playButton);
-        Add(optionsButton);
+        Add(playButton, 1);
+        Add(optionsButton, 1);
         Add(MenuSignPole);
-
-        Add(Title);
-        Add(bgImage);
+        Add(Title, 2);
+        Add(bgImage, -1);
     } 
     void StartGame()
-    {
+    { 
         GameObject loadbg = new GameObject(Level.Width, Level.Height, Shape.Rectangle);
         loadbg.Color = Color.Black;
         GameObject loadimg = new GameObject(500, 500);
@@ -780,6 +811,7 @@ public class Lost_In_Forum : PhysicsGame
             Rooms.GetAllRooms();
             Rooms.CreateMap();
             Rooms.SetRooms();
+            Rooms.CurrentPos = new int[] { Rooms.StartRoom, Rooms.StartRoom };
             Rooms.LoadRoom(Game.Instance, Rooms.map[Rooms.StartRoom, Rooms.StartRoom]);
             loadimg.Destroy();
             loadbg.Destroy();
@@ -803,6 +835,12 @@ public class Lost_In_Forum : PhysicsGame
             CheckRoomExit();
             if (Rooms.CurrentRoom.Enemies.Count == 0)
                 Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared = true;
+            if(player.Hp == 0)
+            {
+                ClearAll();
+                GamePlaying = false;
+                MainMenu();
+            }
         }
         base.Update(time);
     }
