@@ -12,7 +12,7 @@ class Rooms
 {
     public static int DangerLevel = 0;
     public static int MapSize = 13;
-    public static int StartRoom = 7;
+    public static int StartRoom = 6;
     public static int[] CurrentPos { get; set; } = new int[2] { StartRoom, StartRoom };
     public static RoomData[,] map;
     public static Room CurrentRoom { get; set; }
@@ -179,6 +179,7 @@ class Rooms
                 CurrentRoom.Enemies.Add(e);
             }
             CurrentRoom.Exits = room.Exits;
+            UI.MiniMap.UpdateMap();
         }
         catch (Exception e)
         {

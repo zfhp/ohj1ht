@@ -19,7 +19,6 @@ public class Enemy : PhysicsObject
         Color = Color.Red;
     }
 
-
     public Player Target { get; set; }
     public double speed { get; set; } = 5;
     public double KbPower { get; set; } = 10000;

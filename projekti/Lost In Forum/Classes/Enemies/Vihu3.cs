@@ -11,7 +11,7 @@ class TestiVihu3 : Enemy
     public TestiVihu3() : base(120, 120)
     {
         this.Danger = 2;
-        Timer t = new Timer(1, Shoot);
+        Timer t = new Timer(1.6, Shoot);
         t.Start();
     }
     void Shoot()

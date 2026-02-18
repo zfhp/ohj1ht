@@ -1,4 +1,5 @@
 ﻿using Jypeli;
+using Jypeli.Effects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,5 +55,14 @@ public class Player : PhysicsObject
     {
         this.Destroy();
         Speed = 0;
+        var peli = (Lost_In_Forum)Game.Instance;
+        ExplosionSystem efekti = new ExplosionSystem(this.Sprite.Animation.CurrentFrame, 100);
+        efekti.MinVelocity = 50;
+        efekti.MaxVelocity = 200;
+        efekti.MinLifetime = 1;
+        efekti.MaxLifetime = 2;
+        Game.Instance.Add(efekti);
+        efekti.AddEffect(this.X, this.Y, 50);
+        Timer.SingleShot(1, peli.MainMenu);
     }
 }

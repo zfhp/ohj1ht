@@ -1,28 +1,5 @@
-using FarseerPhysics.Collision;
-using FarseerPhysics.Common;
-using FarseerPhysics.Dynamics.Contacts;
 using Jypeli;
-using Jypeli.Assets;
-using Jypeli.Controls;
-using Jypeli.Widgets;
-using Microsoft.Extensions.DependencyModel.Resolution;
-using Silk.NET.Core;
-using Silk.NET.Core.Loader;
-using Silk.NET.OpenGL;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.IO.Pipes;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
-using System.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Transactions;
-using System.Xml.Serialization;
 
 /// @author gr313108
 /// @version 21.11.2025
@@ -42,6 +19,7 @@ public class Lost_In_Forum : PhysicsGame
     PhysicsObject[] borders;
     bool GamePlaying = false;
     Image playerCurrentImg;
+    Image concreteImg;
     List<GameObject> punches = new List<GameObject>();
     /// <summary>
     /// Asettaa kent‰n koon ja kameran/ikkunan asetuksia
@@ -96,6 +74,7 @@ public class Lost_In_Forum : PhysicsGame
         Keyboard.Listen(Key.S, ButtonState.Down, player.Walk, "", new Jypeli.Vector(0, -1));
         Keyboard.Listen(Key.D, ButtonState.Down, player.Walk, "", new Jypeli.Vector(1, 0));
         Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
+        Keyboard.Listen(Key.Tab, ButtonState.Pressed, UI.MiniMap.UpdateMap, "");
     }
     /// <summary>
     /// Siirt‰‰ oliota a m‰‰r‰ll‰ speed suuntaan dir.
@@ -123,21 +102,21 @@ public class Lost_In_Forum : PhysicsGame
             i = Game.LoadImages("KoditonPunch_LHand1", "KoditonPunch_LHand2");
             p.X -= p.Width / 2;
         }
-        else if(v.Y > 0)
+        else if (v.Y > 0)
         {
             i = Game.LoadImages("KoditonPunch_UHand1", "KoditonPunch_UHand2");
             p.Y += p.Height / 3;
         }
-        else if(v.Y < 0)
+        else if (v.Y < 0)
         {
             i = Game.LoadImages("KoditonPunch_DHand1", "KoditonPunch_DHand2");
             p.Y -= p.Height / 2;
         }
         else i = new Image[1] { Game.LoadImage("norsu") };
-            player.Punching = true;
+        player.Punching = true;
         foreach (Image x in i)
             x.Scaling = ImageScaling.Nearest;
-        p.Animation = new Animation(i); 
+        p.Animation = new Animation(i);
         p.Animation.IsPlaying = true;
         p.Animation.FPS = 10;
         p.Animation.StopOnLastFrame = true;
@@ -161,7 +140,7 @@ public class Lost_In_Forum : PhysicsGame
         {
             //RaySegment r = new RaySegment(player.Position, (e.Position - player.Position).Normalize(), Vector.Distance(player.Position,e.Position));
             GameObject g = new GameObject(Vector.Distance(player.Position, e.Position), 1, Shape.Rectangle);
-            g.Position = player.Position + (e.Position - player.Position)/2;
+            g.Position = player.Position + (e.Position - player.Position) / 2;
             g.Angle = (e.Position - player.Position).Normalize().Angle;
             bool hit = true;
             foreach (GameObject x in Rooms.CurrentRoom.Layout)
@@ -179,7 +158,7 @@ public class Lost_In_Forum : PhysicsGame
     {
         player.Punching = false;
     }
-    
+
     /// <summary>
     /// Luo animaatiot.
     /// </summary>
@@ -303,12 +282,13 @@ public class Lost_In_Forum : PhysicsGame
             player.IFrames(1.5);
         }
     }
-
-    void MainMenu()
+    public void MainMenu()
     {
+        ClearAll();
         IsFullScreen = false;
-        SetWindowSize(900,900);
-        Level.Size = new Vector(900,900);
+        GamePlaying = false;
+        SetWindowSize(900, 900);
+        Level.Size = new Vector(900, 900);
         Level.BackgroundColor = Color.DarkGray;
         GameObject Title = new GameObject(599, 392, Shape.Rectangle);
         Title.Image = Game.LoadImage("FORUMTITLE");
@@ -337,14 +317,14 @@ public class Lost_In_Forum : PhysicsGame
         Add(MenuSignPole);
         Add(Title, 2);
         Add(bgImage, -1);
-    } 
+    }
     void StartGame()
-    { 
+    {
         GameObject loadbg = new GameObject(Level.Width, Level.Height, Shape.Rectangle);
         loadbg.Color = Color.Black;
         GameObject loadimg = new GameObject(500, 500);
-        Image[] loadImgs = Game.LoadImages("Loading1","Loading2","Loading3");
-        foreach (Image i  in loadImgs)
+        Image[] loadImgs = Game.LoadImages("Loading1", "Loading2", "Loading3");
+        foreach (Image i in loadImgs)
             i.Scaling = ImageScaling.Nearest;
         loadimg.Animation = new Animation(loadImgs);
         loadimg.Animation.FPS = 1;
@@ -352,7 +332,7 @@ public class Lost_In_Forum : PhysicsGame
         Add(loadimg, 4);
         Add(loadbg, 4);
         // tykk‰‰n milt‰ n‰ytt‰‰ ku siin‰ on sekunnin joku latauskuva nii tein sitten n‰in
-        Timer.SingleShot(3, delegate 
+        Timer.SingleShot(3, delegate
         {
             ClearAll();
             SetupWindow();
@@ -376,12 +356,13 @@ public class Lost_In_Forum : PhysicsGame
     public override void Begin()
     {
         MainMenu();
+        concreteImg = Game.LoadImage("Concrete");
     }
     protected override void Paint(Canvas canvas)
     {
         if (Rooms.CurrentRoom == null || player == null || !GamePlaying)
             return;
-        Image img = Image.FromFile("Content/Concrete.png");
+        Image img = concreteImg;
         foreach (var obj in Rooms.CurrentRoom.Layout)
         {
             img.Scaling = ImageScaling.Nearest;
@@ -389,7 +370,7 @@ public class Lost_In_Forum : PhysicsGame
             Vector pos = new Vector(obj.X, obj.Y);
             canvas.DrawImage(pos, img);
         }
-        if(playerCurrentImg != null && player.Sprite.IsVisible)
+        if (playerCurrentImg != null && player.Sprite.IsVisible)
             canvas.DrawImage(player.Sprite.Position, playerCurrentImg);
         foreach (GameObject g in punches)
         {
@@ -403,6 +384,18 @@ public class Lost_In_Forum : PhysicsGame
             img.Rescale((int)UI.HealthBar.HeartSize + 1, (int)UI.HealthBar.HeartSize + 1);
             canvas.DrawImage(h.Position, img);
         }
+        if(Keyboard.IsKeyDown(Key.Tab))
+        {
+            if (UI.MiniMap.mapBg != null)
+            {
+                var b = UI.MiniMap.mapBg;
+                canvas.DrawImage(b.Position, b.Image);
+            }
+            foreach (var b in UI.MiniMap.map)
+            {
+                canvas.DrawImage(b.Position, b.Image);
+            }
+        }
     }
     protected override void Update(Time time)
     {
@@ -412,12 +405,6 @@ public class Lost_In_Forum : PhysicsGame
             CheckRoomExit();
             if (Rooms.CurrentRoom.Enemies.Count == 0)
                 Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared = true;
-            if (player.Hp == 0)
-            {
-                ClearAll();
-                GamePlaying = false;
-                MainMenu();
-            }
             if (Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared && !borders[1].IgnoresCollisionResponse)
             {
                 foreach (PhysicsObject g in borders)
@@ -428,7 +415,7 @@ public class Lost_In_Forum : PhysicsGame
                 foreach (PhysicsObject g in borders)
                     g.IgnoresCollisionResponse = false;
             }
-            if(player != null && player.Sprite.Animation.CurrentFrame != null)
+            if (player != null && player.Sprite.Animation.CurrentFrame != null)
             {
                 playerCurrentImg = player.Sprite.Animation.CurrentFrame;
                 playerCurrentImg.Rescale((int)player.Sprite.Width + 1, (int)player.Sprite.Height + 1);
