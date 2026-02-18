@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 #endregion
-
+namespace Lost_In_Forum;
 /// <summary>
 /// The main class.
 /// </summary>

@@ -1,16 +1,12 @@
 # Harjoitustyön suunnitelma
 
-(Täydennä oman pelisi tiedot tähän tiedostoon muokkaamalla 
-tiedostoa tekstieditorissa. Käytä [Markdown-syntaksia](https://about.gitlab.com/handbook/markdown-guide/).
-Poista sitten *kaikki* suluilla merkityt kohdat.)
-
 ## Tietoja 
 
 Tekijä: Eeli Eskola
 
-Työ git-varaston osoite: <https://github.com/zfhp/ohj1ht> (*Korvaa* tämä osoite oman git-varastosi osoitteella)
+Työ git-varaston osoite: <https://github.com/zfhp/ohj1ht>
 
-Pelin nimi: Forum Crawler
+Pelin nimi: Lost In Forum
 
 Pelialusta: Windows
 

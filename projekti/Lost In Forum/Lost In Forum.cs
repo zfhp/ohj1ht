@@ -1,3 +1,4 @@
+using FarseerPhysics.Collision;
 using FarseerPhysics.Common;
 using FarseerPhysics.Dynamics.Contacts;
 using Jypeli;
@@ -34,493 +35,14 @@ using System.Xml.Serialization;
 /// </summary>
 
 
-public class Player : PhysicsObject
-{
-    public Player() : base(50,50, Shape.Octagon)
-    {
-        this.MaxVelocity = 0;
-    }
-    public GameObject Sprite { get; set; }
-    bool immune;
-    public double punchInterval { get; set; } = 0.5;
-    public Vector punchdir { get; set; }
-    public bool Punching { get; set; }
-    public int Dmg { get; set; } = 1;
-    public IntMeter Hp { get; set; } = new IntMeter(3, 0, 3);
-    public double Speed { get; set; } = 7;
-    public Animation Walk_S { get; set; }
-    public Animation Walk_N { get; set; }
-    public Animation Walk_E { get; set; }
-    public Animation Walk_W { get; set; }
-    public Animation Punch_R { get; set; }
-    public Animation Punch_L { get; set; }
-    public Animation Punch_U { get; set; }
-    public Animation Punch_D { get; set; }
-    public Animation Idle { get; set; }
-    public void TakeDamage(int dmg)
-    {
-        if (immune)
-            return;
-        Hp.AddValue(-dmg);
-        UI.HealthBar.UpdateHealthBar(this);
-        IFrames(0.75);
-    }
-    public void IFrames(double duration)
-    {
-        immune = true;
-        Timer flashTimer = new Timer(0.1, delegate { this.Sprite.IsVisible = !this.Sprite.IsVisible; });
-        flashTimer.Start();
-        Timer.SingleShot(duration, delegate { immune = false; flashTimer.Stop(); this.Sprite.IsVisible = true; });
-    }
-    public void Walk(Vector dir)
-    {
-        if (Punching) return;
-        this.Position += (dir * Speed);
-    }
-    public void Die()
-    {
-        this.Destroy();
-        Speed = 0;
-    }
-}
-class Projectile : PhysicsObject
-{
-    public Projectile(double size, double speed, Vector dir, PhysicsObject o) : base(size, size, Shape.Circle)
-    {
-        this.speed = speed;
-        this.dir = dir;
-        this.CanRotate = false;
-        this.Collided += coll;
-        Timer.SingleShot(LifeTime, delegate { this.Destroy(); });
-        owner = o;
-    }
-    PhysicsObject owner;
-    public bool Friendly {  get; set; }
-    public int Damage { get; set; } = 1;
-    public double LifeTime = 3;
-    double speed;
-    Vector dir;
-    public virtual void AI()
-    {
-        this.Position += dir * speed;
-    }
-    public override void Update(Time time)
-    {
-        AI();
-    }
-    void coll(IPhysicsObject o, IPhysicsObject t)
-    {
-        if(t is Player p && !this.Friendly)
-        {
-            p.TakeDamage(Damage);
-        }
-        if(t is Enemy e && this.Friendly)
-        {
-            e.TakeDamage(Damage);
-        }
-        if(t != this.owner && t.Tag.ToString() != "Punch")
-            this.Destroy();
-    }
-}
-class Enemy : PhysicsObject
-{
-    public Enemy(double width, double height) : base(width, height, Shape.Rectangle)
-    {
-        hp.LowerLimit += Die;
-        this.CollisionIgnoreGroup = 67;
-        this.CanRotate = false;
-        this.LinearDamping = 6;
-        this.Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
-        this.Color = Color.Red;
-    }
-
-
-    public Player Target { get; set; }
-    public double speed { get; set; } = 5;
-    public double KbPower { get; set; } = 10000;
-    public bool immune { get; set; }
-    public  IntMeter hp { get; set; } = new IntMeter(3,0,3);
-    public int damage { get; set; } = 1;
-    public int Danger { get; set; } = 1;
-
-
-    public virtual void AI()
-    {
-        if(Target == null)
-        {
-            this.Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
-            return;
-        }
-    }
-
-
-    public override void Update(Time time)
-    {
-        AI();
-        base.Update(time);
-    }
-    public virtual void Die()
-    {
-        Rooms.CurrentRoom.Enemies.Remove(this);
-        this.Destroy();
-    }
-    public virtual void TakeDamage(int dmg)
-    {
-        hp.AddValue(-dmg);
-        this.IsVisible = false;
-        Timer.SingleShot(0.02, delegate{ this.IsVisible = true; });
-    }
-    public void Knockback(Vector dir)
-    {
-        this.Hit(dir * KbPower);
-    }
-    /// <summary>
-    /// Tekee pelaajaan vahinkoa tämän vihollisen osuessa pelaajaan. Käytä yhdistämällä vihollisen Collided-tapahtumaan tämä aliohjelma.
-    /// </summary>
-    public void ContactDamage(IPhysicsObject collider, IPhysicsObject target)
-    {
-         if (target.Tag.ToString() == "Player")
-        {
-            Target.TakeDamage(damage);
-        }
-    }
-}
-class TestiVihu3 : Enemy
-{
-    public TestiVihu3() : base(120,120)
-    {
-        this.Danger = 2;
-        Timer t = new Timer(1, Shoot);
-        t.Start();
-    }
-    void Shoot()
-    {
-        if (Target == null || !this.IsAddedToGame)
-            return;
-        Projectile p = new Projectile(50, 15, (Target.Position - this.Position).Normalize(), this);
-        p.Friendly = false;
-        p.CollisionIgnoreGroup = 67;
-        p.Position = this.Position;
-        Game.Instance.Add(p);
-    }
-}
-class TestiVihu1 : Enemy
-{
-    public TestiVihu1() : base(100,100)
-    {
-        this.Collided += ContactDamage;
-        hp.MaxValue = 3;
-        
-        hp.DefaultValue = 3;    
-    }
-    public override void AI()
-    {
-        base.AI();
-        if (Target != null && Target.Position != this.Position)
-            this.Position += (Target.Position - this.Position ).Normalize() * speed;
-    }
-}
-class TestiVihu2 : Enemy
-{
-    Timer pissa = new Timer(2.7);
-    bool liikkuu;
-    Vector dir;
-    public TestiVihu2() : base (150, 150)
-    {
-        this.Danger = 3;
-        pissa.Timeout += Dash;
-        speed = 26;
-        hp.MaxValue = 6;
-        hp.DefaultValue = 6;
-        pissa.Start();
-        this.Collided += ContactDamage;
-        this.KbPower = 40000;
-    }
-    void Dash()
-    {
-        if (Target == null)
-            return;
-        this.Color = Color.Red;
-        Timer.SingleShot(0.3, delegate
-        {
-            liikkuu = true;
-            this.Color = Color.White;
-        });
-        Timer.SingleShot(0.9, delegate 
-        {
-            liikkuu = false;
-        });
-        dir = (Target.Position - this.Position).Normalize();
-    }
-    public override void AI()
-    {
-        base.AI();
-        if(liikkuu && Target != null && Target.Position != this.Position)
-        {
-            this.Position += dir * speed;
-        }
-    }
-}
-class Rooms 
-{
-    public static int DangerLevel = 0;
-    public static int MapSize = 13;
-    public static int StartRoom = 7;
-    public static int[] CurrentPos { get; set; } = new int[2] {StartRoom, StartRoom};
-    public static RoomData[,] map;
-    public static Room CurrentRoom { get; set; }
-    public static List<RoomData> AllRooms { get; set; } = new List<RoomData>();
-    public static void GetAllRooms()
-    {
-        if (!Directory.Exists("Rooms"))
-        {
-            Game.Instance.MessageDisplay.Add("DIRECTORY NOT FOUDN");
-            return;
-        }
-        string[] paths = Directory.GetFiles("Rooms");
-        foreach (string path in paths)
-        {
-            string jsonString = File.ReadAllText(path);
-            RoomData room = JsonSerializer.Deserialize<RoomData>(jsonString);
-            AllRooms.Add(room);
-        }
-    }
-    public static void SetRooms()
-    {
-        for (int i = 0; i < MapSize; i++)
-        {
-            for (int x = 0; x < MapSize; x++)
-            {
-                if (map[i, x] != null)
-                {
-
-                    if (i > 0 && map[i - 1, x] != null)
-                        map[i, x].Exits[0] = 1;
-                    if (i < MapSize - 1 && map[i + 1, x] != null)
-                        map[i, x].Exits[2] = 1;
-                    if (x > 0&& map[i, x - 1] != null)
-                        map[i, x].Exits[3] = 1;
-                    if (x < MapSize - 1 &&map[i, x + 1] != null)
-                        map[i, x].Exits[1] = 1;
-                    List<RoomData> ViableRooms = new List<RoomData>();
-                    foreach (RoomData room in AllRooms)
-                    {
-                        if (room.Exits.SequenceEqual(map[i, x].Exits))
-                            ViableRooms.Add(room);
-                    }
-                    if (ViableRooms.Count > 0)
-                    {
-                        RoomData r = ViableRooms[RandomGen.NextInt(ViableRooms.Count)];
-                        map[i, x] = new RoomData
-                        {
-                            Enemies = new List<ObjectData>(r.Enemies),
-                            Layout = new List<ObjectData>(r.Layout),
-                            Exits = new List<int>(r.Exits).ToArray()
-                        };
-                    }
-
-                }
-            }
-        }
-    }
-    public static void CreateMap()
-    {
-        map = new RoomData[MapSize, MapSize];
-        map[StartRoom, StartRoom] = new RoomData();
-        int[] selection = new int[2] { 0, 0 };
-        double i = MapSize;
-        int safetynet = 0;
-        while (CountRooms() < 2 * MapSize && safetynet < 250)
-        {
-            MakeWorm(GetRandomRoom(), 3, 7);
-            safetynet++;
-        }
-        
-        static int CountRooms()
-        {
-            int count = 0;
-            foreach (var r in map) if (r != null) count++;
-            return count;
-        }
-        int[] GetRandomRoom()
-        {
-            List<int[]> validRooms = new List<int[]>();
-            for (int row = 0; row < map.GetLength(0); row++)
-            {
-                for (int col = 0; col < map.GetLength(1); col++)
-                {
-                    if (map[row, col] != null)
-                    {
-                        validRooms.Add(new int[] { row, col });
-                    }
-                }
-            }
-            if (validRooms.Count == 0) return null;
-            int[]pos = validRooms[RandomGen.NextInt(validRooms.Count)];
-            selection = new int[] { pos[0], pos[1] }    ;
-            return pos;
-        }
-        void MakeWorm(int[] startpos, int min, int max)
-        {
-            selection[0] = startpos[0];
-            selection[1] = startpos[1];
-            int[] dir = RandomGen.SelectOne<int[]>(new int[] {0,1}, new int[] { 0, -1 }, new int[] { 1,0 }, new int[] { -1,0});
-            for (int i = 0; i < RandomGen.NextInt(min, max + 1); i++)
-            {
-                selection[0] += dir[0];
-                selection[1] += dir[1];
-                if(RandomGen.NextInt(2) == 0)
-                {
-                    dir = RandomGen.SelectOne<int[]>(new int[] { 0, 1 }, new int[] { 0, -1 }, new int[] { 1, 0 }, new int[] { -1, 0 });
-                    i--;
-                }
-                if (selection[0] >= 0 && selection[0] < map.GetLength(0) && selection[1] >= 0 && selection[1] < map.GetLength(1))
-                {
-                    map[selection[0], selection[1]] = new RoomData();
-                }
-                else
-                    break;
-            }
-        }
-}
-    public static void LoadRoom(Game game, RoomData room)
-    {
-        try
-        {
-            Rooms.DangerLevel = Math.Abs(Rooms.StartRoom - CurrentPos[0]) + Math.Abs(Rooms.StartRoom - CurrentPos[1]);
-            if (CurrentRoom != null)
-            {
-                for (int i = CurrentRoom.Layout.Count - 1; i >= 0; i--)
-                {
-                    CurrentRoom.Layout[i].Destroy();
-                }
-            }
-            CurrentRoom = new Room();
-            foreach (ObjectData obj in room.Layout)
-            {
-                PhysicsObject block = new PhysicsObject(game.Level.Width/32, game.Level.Height/20, obj.X, obj.Y);
-                block.MakeStatic();
-                game.Add(block);
-                CurrentRoom.Layout.Add(block);
-            }
-            List<Vector> enemySpawns = new List<Vector>();
-            foreach (ObjectData obj in room.Enemies)
-            {
-                enemySpawns.Add(new Vector(obj.X, obj.Y));
-            }
-            int dangerPoints = DangerLevel;
-            while (dangerPoints > 0 && enemySpawns.Count > 0 && !room.Cleared)
-            {
-                Enemy e = new Enemy(1,1);
-                for (bool b = false; b == false;)
-                {
-                    e = GetEnemyType(RandomGen.NextInt(1, 4));
-                    if (e.Danger <= dangerPoints)
-                        b = true;
-                }
-                int rand = RandomGen.NextInt(enemySpawns.Count);
-                e.Position = enemySpawns[rand];
-                enemySpawns.Remove(enemySpawns[rand]);
-                dangerPoints -= e.Danger;
-                game.Add(e);
-                CurrentRoom.Enemies.Add(e);
-            }
-            CurrentRoom.Exits = room.Exits;
-        }
-        catch (Exception e)
-        { 
-            System.Diagnostics.Debug.WriteLine("Error loading room: " + e.Message);
-        }
-    }
-    public static Enemy GetEnemyType(int i)
-    {
-        switch(i)
-        {
-            case 1:
-                return new TestiVihu1();
-            case 2:
-                return new TestiVihu2();
-            case 3:
-                return new TestiVihu3();
-            default:
-                return new TestiVihu1();
-        }
-    }
-}
-public static class UI
-{
-    public static class HealthBar
-    {
-        public static double HeartSize { get; set; } = 150;
-        static List<Heart> Hearts = new List<Heart>();
-        public class Heart : GameObject
-        {
-            public Heart() : base(HeartSize, HeartSize)
-            {
-                this.Image = Game.LoadImage("sydän");
-                this.Image.Scaling = ImageScaling.Nearest;
-            }
-        }
-        public static void CreateHealthBar(Game game, Player player, Level level)
-        {
-            for (int i = 0; i < Hearts.Count;)
-            {
-                Hearts[i].Destroy();
-                Hearts.RemoveAt(i);
-            }
-            for (int i = 0; i < player.Hp.MaxValue; i++)
-            {
-                Heart h = new Heart();
-                h.Position = new Vector(level.Left + h.Width * (i+1) * 1.2, level.Top - h.Height);
-                Hearts.Add(h);
-                game.Add(h,4);
-            }
-        }
-        public static void UpdateHealthBar(Player player)
-        {
-            for (int i = 0; i < Hearts.Count; i++)
-            {
-                if (!player.IsAddedToGame)
-                    Hearts[i].Image = Game.LoadImage("tyhjäsydän");
-                else if (i < player.Hp.Value)
-                {
-                    Hearts[i].Image = Game.LoadImage("sydän");
-                }
-                else
-                {
-                    Hearts[i].Image = Game.LoadImage("tyhjäsydän");
-                }
-                Hearts[i].Image.Scaling = ImageScaling.Nearest;
-            }
-        }
-    }
-}
-public class ObjectData
-{
-    public string Type { get; set; }
-    public double X { get; set; }
-    public double Y { get; set; }
-    public double Width { get; set; }
-    public double Height { get; set; }
-    public string ImageName { get; set; }
-}
-class Room
-{
-    public List<PhysicsObject> Layout { get; set; } = new List<PhysicsObject>();
-    public List<Enemy> Enemies { get; set; } = new List<Enemy>();
-    public int[] Exits { get; set; } = new int[4];
-}
-public class RoomData()
-{
-    public bool Cleared { set; get; }
-    public List<ObjectData> Layout { get; set; } = new List<ObjectData>();
-    public List<ObjectData> Enemies { get; set; } = new List<ObjectData>();
-    public int[] Exits { get; set; } = new int[4];
-}
+namespace Lost_In_Forum;
 public class Lost_In_Forum : PhysicsGame
 {
     Player player;
+    PhysicsObject[] borders;
     bool GamePlaying = false;
+    Image playerCurrentImg;
+    List<GameObject> punches = new List<GameObject>();
     /// <summary>
     /// Asettaa kentän koon ja kameran/ikkunan asetuksia
     /// </summary>
@@ -532,6 +54,18 @@ public class Lost_In_Forum : PhysicsGame
         Camera.ZoomToLevel();
         Level.BackgroundColor = Color.DarkGray;
         Game.UpdatesPerSecod = 59;
+        borders = new PhysicsObject[] {
+            new PhysicsObject(Level.Width, Level.Height/10,Shape.Rectangle, 0, Level.Bottom),
+            new PhysicsObject(Level.Width, Level.Height/10,Shape.Rectangle, 0, Level.Top),
+            new PhysicsObject(Level.Width / 16, Level.Height,Shape.Rectangle,Level.Left, 0),
+            new PhysicsObject(Level.Width / 16, Level.Height,Shape.Rectangle, Level.Right, 0),
+        };
+        foreach (PhysicsObject g in borders)
+        {
+            g.MakeStatic();
+            Add(g);
+            g.Color = Color.Transparent;
+        }
     }
     /// <summary>
     /// Luo pelaajan.
@@ -585,6 +119,7 @@ public class Lost_In_Forum : PhysicsGame
         }
         else if (v.X < 0)
         {
+
             i = Game.LoadImages("KoditonPunch_LHand1", "KoditonPunch_LHand2");
             p.X -= p.Width / 2;
         }
@@ -598,27 +133,44 @@ public class Lost_In_Forum : PhysicsGame
             i = Game.LoadImages("KoditonPunch_DHand1", "KoditonPunch_DHand2");
             p.Y -= p.Height / 2;
         }
-
         else i = new Image[1] { Game.LoadImage("norsu") };
             player.Punching = true;
         foreach (Image x in i)
             x.Scaling = ImageScaling.Nearest;
-        p.Animation = new Animation(i);
+        p.Animation = new Animation(i); 
         p.Animation.IsPlaying = true;
         p.Animation.FPS = 10;
         p.Animation.StopOnLastFrame = true;
-        p.Animation.Played += p.Destroy;
+        p.Animation.Played += delegate { p.Destroy(); punches.Remove(p); };
         p.Tag = "Punch";
         p.MakeStatic();
         p.CollisionIgnoreGroup = 1;
         p.IgnoresCollisionResponse = true;
+        p.IsVisible = false;
         Add(p, 4);
-        Timer.SingleShot(player.punchInterval, EndPunch);
+        punches.Add(p);
+        Timer.SingleShot(player.punchInterval, delegate { EndPunch(); });
+    }
+    bool isOverlapping(GameObject a, GameObject b)
+    {
+        return a.Top > b.Bottom && a.Bottom < b.Top && a.Left < b.Right && a.Right > b.Left;
     }
     void PunchCollision(IPhysicsObject o, IPhysicsObject t)
     {
         if (t is Enemy e)
         {
+            //RaySegment r = new RaySegment(player.Position, (e.Position - player.Position).Normalize(), Vector.Distance(player.Position,e.Position));
+            GameObject g = new GameObject(Vector.Distance(player.Position, e.Position), 1, Shape.Rectangle);
+            g.Position = player.Position + (e.Position - player.Position)/2;
+            g.Angle = (e.Position - player.Position).Normalize().Angle;
+            bool hit = true;
+            foreach (GameObject x in Rooms.CurrentRoom.Layout)
+            {
+                if (isOverlapping(x, g))
+                    hit = false;
+            }
+            if (!hit)
+                return;
             e.TakeDamage(player.Dmg);
             e.Knockback(player.punchdir);
         }
@@ -752,10 +304,6 @@ public class Lost_In_Forum : PhysicsGame
         }
     }
 
-    public static void Menu()
-    {
-
-    }
     void MainMenu()
     {
         IsFullScreen = false;
@@ -823,9 +371,38 @@ public class Lost_In_Forum : PhysicsGame
         });
 
     }
+
+
     public override void Begin()
     {
         MainMenu();
+    }
+    protected override void Paint(Canvas canvas)
+    {
+        if (Rooms.CurrentRoom == null || player == null || !GamePlaying)
+            return;
+        Image img = Image.FromFile("Content/Concrete.png");
+        foreach (var obj in Rooms.CurrentRoom.Layout)
+        {
+            img.Scaling = ImageScaling.Nearest;
+            img.Rescale((int)obj.Size.X + 1, (int)obj.Size.Y + 1);
+            Vector pos = new Vector(obj.X, obj.Y);
+            canvas.DrawImage(pos, img);
+        }
+        if(playerCurrentImg != null && player.Sprite.IsVisible)
+            canvas.DrawImage(player.Sprite.Position, playerCurrentImg);
+        foreach (GameObject g in punches)
+        {
+            img = g.Animation.CurrentFrame;
+            img.Rescale((int)g.Width + 1, (int)g.Height + 1);
+            canvas.DrawImage(g.Position, img);
+        }
+        foreach (var h in UI.HealthBar.Hearts)
+        {
+            img = h.Image;
+            img.Rescale((int)UI.HealthBar.HeartSize + 1, (int)UI.HealthBar.HeartSize + 1);
+            canvas.DrawImage(h.Position, img);
+        }
     }
     protected override void Update(Time time)
     {
@@ -835,11 +412,26 @@ public class Lost_In_Forum : PhysicsGame
             CheckRoomExit();
             if (Rooms.CurrentRoom.Enemies.Count == 0)
                 Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared = true;
-            if(player.Hp == 0)
+            if (player.Hp == 0)
             {
                 ClearAll();
                 GamePlaying = false;
                 MainMenu();
+            }
+            if (Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared && !borders[1].IgnoresCollisionResponse)
+            {
+                foreach (PhysicsObject g in borders)
+                    g.IgnoresCollisionResponse = true;
+            }
+            else if (!Rooms.map[Rooms.CurrentPos[1], Rooms.CurrentPos[0]].Cleared && borders[1].IgnoresCollisionResponse)
+            {
+                foreach (PhysicsObject g in borders)
+                    g.IgnoresCollisionResponse = false;
+            }
+            if(player != null && player.Sprite.Animation.CurrentFrame != null)
+            {
+                playerCurrentImg = player.Sprite.Animation.CurrentFrame;
+                playerCurrentImg.Rescale((int)player.Sprite.Width + 1, (int)player.Sprite.Height + 1);
             }
         }
         base.Update(time);
