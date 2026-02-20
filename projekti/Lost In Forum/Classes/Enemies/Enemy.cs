@@ -17,8 +17,17 @@ public class Enemy : PhysicsObject
         LinearDamping = 6;
         Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
         Color = Color.Red;
+        healthBarBg = new GameObject(this.Width, this.Height / 10, Shape.Rectangle);
+        healthBarBg.Image = Image.FromColor((int)healthBarBg.Width + 2, (int)healthBarBg.Height + 1, Color.Black);
+        healthBarBg.Y = this.Bottom - healthBarBg.Height * 1.5;
+        healthBar = new GameObject(this.Width, this.Height / 10, Shape.Rectangle);
+        healthBar.Image = Image.FromColor((int)healthBar.Width + 2, (int)healthBar.Height + 1, Color.Red);
+        healthBar.Y = healthBarBg.Y;
+        this.Add(healthBarBg);
+        healthBarBg.Add(healthBar);
     }
-
+    public GameObject healthBarBg { get; }
+    public GameObject healthBar { get; }
     public Player Target { get; set; }
     public double speed { get; set; } = 5;
     public double KbPower { get; set; } = 10000;
@@ -52,6 +61,9 @@ public class Enemy : PhysicsObject
     {
         hp.AddValue(-dmg);
         IsVisible = false;
+        healthBar.Width = healthBarBg.Width * ((double)hp.Value / hp.MaxValue);
+        healthBar.RelativeLeft = healthBarBg.RelativeLeft;
+        healthBar.Image = Image.FromColor((int)healthBar.Width + 2, (int)healthBar.Height + 2, Color.Red);
         Timer.SingleShot(0.02, delegate { IsVisible = true; });
     }
     public void Knockback(Vector dir)

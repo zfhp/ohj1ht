@@ -378,6 +378,11 @@ public class Lost_In_Forum : PhysicsGame
             img.Rescale((int)g.Width + 1, (int)g.Height + 1);
             canvas.DrawImage(g.Position, img);
         }
+        foreach (Enemy e in Rooms.CurrentRoom.Enemies)
+        {
+            canvas.DrawImage(e.healthBarBg.Position, e.healthBarBg.Image);
+            canvas.DrawImage(e.healthBar.Position, e.healthBar.Image);
+        }
         foreach (var h in UI.HealthBar.Hearts)
         {
             img = h.Image;
