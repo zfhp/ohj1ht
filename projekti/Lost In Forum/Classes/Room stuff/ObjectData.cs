@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Lost_In_Forum;
+﻿namespace Lost_In_Forum;
     public class ObjectData
 {
     public string Type { get; set; }

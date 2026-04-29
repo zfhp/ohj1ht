@@ -1,9 +1,4 @@
 ﻿using Jypeli;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lost_In_Forum;
 
@@ -11,45 +6,47 @@ public class Enemy : PhysicsObject
 {
     public Enemy(double width, double height) : base(width, height, Shape.Rectangle)
     {
-        hp.LowerLimit += Die;
-        CollisionIgnoreGroup = 67;
+        Hp.LowerLimit += Die;
+        base.CollisionIgnoreGroup = 67;
         CanRotate = false;
         LinearDamping = 6;
         Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
-        Color = Color.Red;
-        healthBarBg = new GameObject(this.Width, this.Height / 10, Shape.Rectangle);
-        healthBarBg.Image = Image.FromColor((int)healthBarBg.Width + 2, (int)healthBarBg.Height + 1, Color.Black);
-        healthBarBg.Y = this.Bottom - healthBarBg.Height * 1.5;
-        healthBar = new GameObject(this.Width, this.Height / 10, Shape.Rectangle);
-        healthBar.Image = Image.FromColor((int)healthBar.Width + 2, (int)healthBar.Height + 1, Color.Red);
-        healthBar.Y = healthBarBg.Y;
-        this.Add(healthBarBg);
-        healthBarBg.Add(healthBar);
+        Sprite.Size = base.Size;
+        Sprite.Image = Image.FromColor((int)width, (int)height, Color.Red);
+        HealthBarBg = new GameObject(this.Sprite.Width, this.Height / 10, Shape.Rectangle);
+        HealthBarBg.Image = Image.FromColor((int)HealthBarBg.Width + 2, (int)HealthBarBg.Height + 1, Color.Black);
+        HealthBarBg.Y = this.Bottom - HealthBarBg.Height * 1.5;
+        HealthBar = new GameObject(this.Width, this.Height / 10, Shape.Rectangle);
+        HealthBar.Image = Image.FromColor((int)HealthBar.Width + 2, (int)HealthBar.Height + 1, Color.Red);
+        HealthBar.Y = HealthBarBg.Y;
+        this.Add(HealthBarBg);
+        this.Add(Sprite);
+        HealthBarBg.Add(HealthBar);
     }
-    public GameObject healthBarBg { get; }
-    public GameObject healthBar { get; }
+    public GameObject HealthBarBg { get; }
+    public GameObject HealthBar { get; }
+    public GameObject Sprite { get; set; } = new GameObject(1,1);
     public Player Target { get; set; }
-    public double speed { get; set; } = 5;
+    public double Speed { get; set; } = 5;
     public double KbPower { get; set; } = 10000;
-    public bool immune { get; set; }
-    public IntMeter hp { get; set; } = new IntMeter(3, 0, 3);
-    public int damage { get; set; } = 1;
+    public bool Immune { get; set; }
+    public IntMeter Hp { get; set; } = new IntMeter(3, 0, 3);
+    public int Damage { get; set; } = 1;
     public int Danger { get; set; } = 1;
 
 
-    public virtual void AI()
+    public virtual void Ai()
     {
         if (Target == null)
         {
             Target = Game.Instance.GetFirstObject(p => p is Player) as Player;
-            return;
         }
     }
 
 
     public override void Update(Time time)
     {
-        AI();
+        Ai();
         base.Update(time);
     }
     public virtual void Die()
@@ -59,12 +56,12 @@ public class Enemy : PhysicsObject
     }
     public virtual void TakeDamage(int dmg)
     {
-        hp.AddValue(-dmg);
-        IsVisible = false;
-        healthBar.Width = healthBarBg.Width * ((double)hp.Value / hp.MaxValue);
-        healthBar.RelativeLeft = healthBarBg.RelativeLeft;
-        healthBar.Image = Image.FromColor((int)healthBar.Width + 2, (int)healthBar.Height + 2, Color.Red);
-        Timer.SingleShot(0.02, delegate { IsVisible = true; });
+        Hp.AddValue(-dmg);
+        Sprite.IsVisible = false;
+        HealthBar.Width = HealthBarBg.Width * ((double)Hp.Value / Hp.MaxValue);
+        HealthBar.RelativeLeft = HealthBarBg.RelativeLeft;
+        HealthBar.Image = Image.FromColor((int)HealthBar.Width + 2, (int)HealthBar.Height + 2, Color.Red);
+        Timer.SingleShot(0.02, delegate { Sprite.IsVisible = true; });
     }
     public void Knockback(Vector dir)
     {
@@ -77,7 +74,7 @@ public class Enemy : PhysicsObject
     {
         if (target.Tag.ToString() == "Player")
         {
-            Target.TakeDamage(damage);
+            Target.TakeDamage(Damage);
         }
     }
 }

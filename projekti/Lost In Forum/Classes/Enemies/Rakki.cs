@@ -1,49 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Jypeli;
-using System.Threading.Tasks;
+﻿using Jypeli;
 
 namespace Lost_In_Forum;
 class Rakki : Enemy
 {
-    Timer dashTimer = new Timer(2.7);
-    bool liikkuu;
-    Vector dir;
-    public Rakki() : base(150, 150)
+    Timer _dashTimer = new Timer(2.7);
+    bool _liikkuu;
+    Vector _dir;
+    public Rakki() : base(100, 100)
     {
-        this.Danger = 3;
-        dashTimer.Timeout += Dash;
-        speed = 26;
-        hp.MaxValue = 6;
-        hp.DefaultValue = 6;
-        dashTimer.Start();
+        this.Danger = 2;
+        this.IsVisible = false;
+        this.KbPower = 9000;
+        _dashTimer.Timeout += Dash;
+        Speed = 26;
+        Hp.MaxValue = 5;
+        Hp.DefaultValue = 5;
+        _dashTimer.Start();
         this.Collided += ContactDamage;
-        this.KbPower = 40000;
+        this.Sprite.Size = new Vector(150, 150);
+        this.Sprite.Y = this.Bottom + this.Sprite.Height/2;
+        Image[] i = Game.LoadImages("RakkiIdle", "RakkiWindup", "RakkiCharge");
+        foreach (Image img in i)
+            img.Scaling = ImageScaling.Nearest;
+        this.Sprite.Animation = new Animation(i);
+        this.HealthBarBg.Size = new Vector(this.Sprite.Width, this.Sprite.Height/10);
+        this.HealthBar.Size = this.HealthBarBg.Size;
     }
     void Dash()
     {
         if (Target == null)
             return;
-        this.Color = Color.Red;
+        this.Sprite.Animation.Step();
         Timer.SingleShot(0.3, delegate
         {
-            liikkuu = true;
+            _liikkuu = true;
             this.Color = Color.White;
+            this.Sprite.Animation.Step();
         });
         Timer.SingleShot(0.9, delegate
         {
-            liikkuu = false;
+            _liikkuu = false;
+            this.Sprite.Animation.Step();
         });
-        dir = (Target.Position - this.Position).Normalize();
+        _dir = (Target.Position - this.Position).Normalize();
     }
-    public override void AI()
+    public override void Ai()
     {
-        base.AI();
-        if (liikkuu && Target != null && Target.Position != this.Position)
+        base.Ai();
+        if (_liikkuu && Target != null && Target.Position != this.Position)
         {
-            this.Position += dir * speed;
+            this.Position += _dir * Speed;
         }
     }
 }

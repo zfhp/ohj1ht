@@ -1,37 +1,32 @@
 ﻿using Jypeli;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Lost_In_Forum;
 class Projectile : PhysicsObject
 {
     public Projectile(double size, double speed, Vector dir, PhysicsObject o) : base(size, size, Shape.Circle)
     {
-        this.speed = speed;
-        this.dir = dir;
+        this._speed = speed;
+        this._dir = dir;
         this.CanRotate = false;
-        this.Collided += coll;
+        this.Collided += Coll;
         Timer.SingleShot(LifeTime, delegate { this.Destroy(); });
-        owner = o;
+        _owner = o;
     }
-    PhysicsObject owner;
+    PhysicsObject _owner;
     public bool Friendly { get; set; }
     public int Damage { get; set; } = 1;
     public double LifeTime = 3;
-    double speed;
-    Vector dir;
-    public virtual void AI()
+    double _speed;
+    Vector _dir;
+    public virtual void Ai()
     {
-        this.Position += dir * speed;
+        this.Position += _dir * _speed;
     }
     public override void Update(Time time)
     {
-        AI();
+        Ai();
     }
-    void coll(IPhysicsObject o, IPhysicsObject t)
+    void Coll(IPhysicsObject o, IPhysicsObject t)
     {
         if (t is Player p && !this.Friendly)
         {
@@ -41,7 +36,7 @@ class Projectile : PhysicsObject
         {
             e.TakeDamage(Damage);
         }
-        if (t != this.owner && t.Tag.ToString() != "Punch")
+        if (t != this._owner && t.Tag.ToString() != "Punch")
             this.Destroy();
     }
 }

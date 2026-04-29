@@ -1,14 +1,9 @@
-﻿using FarseerPhysics.Collision;
-using Jypeli;
+﻿using Jypeli;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Schema;
 
 namespace Lost_In_Forum;
-public static class UI
+public static class Ui
 {
     public static class HealthBar
     {
@@ -51,52 +46,51 @@ public static class UI
     }
     public static class MiniMap
     {
-        public static List<GameObject> map = new List<GameObject>();
-        public static GameObject mapBg;
+        public static List<GameObject> Map = new List<GameObject>();
+        public static GameObject MapBg;
         public static void UpdateMap()
         {
-            map.Clear();
+            Map.Clear();
             Level k = Game.Instance.Level;
-            if(mapBg == null)
+            if(MapBg == null)
             {
-                mapBg = new GameObject(k.Width / 64 * Rooms.MapSize, k.Height / 40 * Rooms.MapSize, Shape.Rectangle);
-                mapBg.Color = Color.LightGray;
-                mapBg.Position = new Vector(k.Right - k.Width / 5 , k.Top - k.Height / 5);
-                mapBg.Image = Image.FromColor((int)mapBg.Width + 1, (int)mapBg.Height + 1, mapBg.Color);
+                MapBg = new GameObject(k.Width / 64 * Rooms.MapSize, k.Height / 40 * Rooms.MapSize, Shape.Rectangle);
+                MapBg.Color = Color.LightGray;
+                MapBg.Position = new Vector(k.Right - k.Width / 5 , k.Top - k.Height / 5);
+                MapBg.Image = Image.FromColor((int)MapBg.Width + 1, (int)MapBg.Height + 1, MapBg.Color);
             }
             int[] pos = Rooms.CurrentPos;
-            List<RoomData> l = new List<RoomData>();
-            for (int y = 0; y < Rooms.map.GetLength(0); y++) 
+            for (int y = 0; y < Rooms.Map.GetLength(0); y++) 
             {
-                for (int x = 0; x < Rooms.map.GetLength(1); x++)
+                for (int x = 0; x < Rooms.Map.GetLength(1); x++)
                 {
                     bool neighboringCleared = false;
-                    RoomData room = Rooms.map[y, x];
+                    RoomData room = Rooms.Map[y, x];
                     if (room != null)
                     {
                         for (int i = -1; i< 2; i += 2)
                         {
-                            if (Rooms.map[Math.Clamp(y + i, 0, Rooms.map.GetLength(0) - 1), x] != null)
-                                if (Rooms.map[Math.Clamp(y + i, 0, Rooms.map.GetLength(0) - 1), x].Cleared || (x == pos[0] && (y + i) == pos[1]))
+                            if (Rooms.Map[Math.Clamp(y + i, 0, Rooms.Map.GetLength(0) - 1), x] != null)
+                                if (Rooms.Map[Math.Clamp(y + i, 0, Rooms.Map.GetLength(0) - 1), x].Cleared || (x == pos[0] && (y + i) == pos[1]))
                                     neighboringCleared = true;
-                            if (Rooms.map[y, Math.Clamp(x + i, 0, Rooms.map.GetLength(1) - 1)] != null)
-                                if (Rooms.map[y, Math.Clamp(x + i, 0, Rooms.map.GetLength(1) - 1)].Cleared || ((x + i) == pos[0] && y == pos[1]))
+                            if (Rooms.Map[y, Math.Clamp(x + i, 0, Rooms.Map.GetLength(1) - 1)] != null)
+                                if (Rooms.Map[y, Math.Clamp(x + i, 0, Rooms.Map.GetLength(1) - 1)].Cleared || ((x + i) == pos[0] && y == pos[1]))
                                     neighboringCleared = true;
                         }
                         if (room.Cleared || (pos[1] == y && pos[0] == x) || neighboringCleared)
                         {
-                            GameObject g = new GameObject(mapBg.Width / Rooms.MapSize * 0.8, mapBg.Height / Rooms.MapSize * 0.8, Shape.Rectangle);
+                            GameObject g = new GameObject(MapBg.Width / Rooms.MapSize * 0.8, MapBg.Height / Rooms.MapSize * 0.8, Shape.Rectangle);
                             if (pos[1] == y && pos[0] == x)
                                 g.Color = Color.White;
                             else if(room.Cleared)
                                 g.Color = Color.Gray;
                             else
                                 g.Color = Color.DarkGray;
-                            double posX = mapBg.Left + (x * (mapBg.Width / Rooms.MapSize)) + (g.Width / 2);
-                            double posY = mapBg.Top - (y * (mapBg.Height / Rooms.MapSize)) - (g.Height / 2);
+                            double posX = MapBg.Left + (x * (MapBg.Width / Rooms.MapSize)) + (g.Width / 2);
+                            double posY = MapBg.Top - (y * (MapBg.Height / Rooms.MapSize)) - (g.Height / 2);
                             g.Image = Image.FromColor((int)g.Width + 1, (int)g.Height + 1, g.Color);
                             g.Position = new Vector(posX, posY);
-                            map.Add(g);
+                            Map.Add(g);
                         }
                     }
 

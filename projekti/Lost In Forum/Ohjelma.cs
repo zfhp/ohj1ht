@@ -16,7 +16,7 @@ public static class Program
     [STAThread]
     static void Main()
     {
-        using var game = new Lost_In_Forum();
+        using var game = new LostInForum();
         game.Run();
     }
 }
